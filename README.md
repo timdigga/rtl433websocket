@@ -17,8 +17,7 @@ Follow these steps to set up and run the project on your local machine:
 First, clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/your-username/real-time-data-visualization.git
-cd real-time-data-visualization
+git clone https://github.com/timdigga/rtl433websocket
 ```
 Install the required Python dependencies:
 

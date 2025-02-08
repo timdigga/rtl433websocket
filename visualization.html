@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Real-Time Data Visualization</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #141e30, #243b55);
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    canvas {
+      max-width: 800px;
+      max-height: 400px;
+      margin-top: 20px;
+    }
+    select {
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Real-Time Temperature Visualization</h1>
+    <label for="sensorSelect">Select Sensor:</label>
+    <select id="sensorSelect"></select>
+    <canvas id="tempChart"></canvas>
+  </div>
+
+  <div class="container">
+    <h1>Real-Time TPMS Visualization</h1>
+    <label for="tpmsSelect">Select Vehicle:</label>
+    <select id="tpmsSelect"></select>
+    <canvas id="tpmsChart"></canvas>
+  </div>
+
+  <script>
+    const tempCtx = document.getElementById('tempChart').getContext('2d');
+    const tempChart = new Chart(tempCtx, {
+      type: 'line',
+      data: { labels: [], datasets: [] },
+      options: {
+        scales: {
+          x: { title: { display: true, text: 'Time' } },
+          y: { title: { display: true, text: 'Temperature (°C)' }, beginAtZero: false }
+        }
+      }
+    });
+
+    const tpmsCtx = document.getElementById('tpmsChart').getContext('2d');
+    const tpmsChart = new Chart(tpmsCtx, {
+      type: 'line',
+      data: { labels: [], datasets: [] },
+      options: {
+        scales: {
+          x: { title: { display: true, text: 'Time' } },
+          y: { title: { display: true, text: 'Pressure (PSI)' }, beginAtZero: false }
+        }
+      }
+    });
+
+    const ws = new WebSocket('ws://localhost:8765/');
+    let sensorData = {};
+    let tpmsData = {};
+
+    ws.onopen = () => console.log("Connected to WebSocket server.");
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const time = new Date(data.time).toLocaleTimeString();
+
+      if (data.type === 'TPMS') {
+        const vehicle = data.model;
+        if (!tpmsData[vehicle]) {
+          tpmsData[vehicle] = { labels: [], data: [] };
+          const tpmsSelect = document.getElementById('tpmsSelect');
+          const option = document.createElement('option');
+          option.value = vehicle;
+          option.textContent = vehicle;
+          tpmsSelect.appendChild(option);
+        }
+        tpmsData[vehicle].labels.push(time);
+        tpmsData[vehicle].data.push(data.pressure_PSI);
+        if (tpmsData[vehicle].labels.length > 30) {
+          tpmsData[vehicle].labels.shift();
+          tpmsData[vehicle].data.shift();
+        }
+        updateTPMSChart();
+      } else {
+        const sensor = data.model;
+        if (!sensorData[sensor]) {
+          sensorData[sensor] = { labels: [], data: [] };
+          const sensorSelect = document.getElementById('sensorSelect');
+          const option = document.createElement('option');
+          option.value = sensor;
+          option.textContent = sensor;
+          sensorSelect.appendChild(option);
+        }
+        sensorData[sensor].labels.push(time);
+        sensorData[sensor].data.push(data.temperature_C);
+        if (sensorData[sensor].labels.length > 30) {
+          sensorData[sensor].labels.shift();
+          sensorData[sensor].data.shift();
+        }
+        updateTempChart();
+      }
+    };
+
+    function updateTempChart() {
+      const selectedSensor = document.getElementById('sensorSelect').value;
+      if (selectedSensor && sensorData[selectedSensor]) {
+        tempChart.data.labels = sensorData[selectedSensor].labels;
+        tempChart.data.datasets = [{
+          label: `Temperature (°C) - ${selectedSensor}`,
+          data: sensorData[selectedSensor].data,
+          borderColor: 'rgba(75, 192, 192, 1)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          fill: true,
+          tension: 0.1
+        }];
+        tempChart.update();
+      }
+    }
+
+    function updateTPMSChart() {
+      const selectedVehicle = document.getElementById('tpmsSelect').value;
+      if (selectedVehicle && tpmsData[selectedVehicle]) {
+        tpmsChart.data.labels = tpmsData[selectedVehicle].labels;
+        tpmsChart.data.datasets = [{
+          label: `Pressure (PSI) - ${selectedVehicle}`,
+          data: tpmsData[selectedVehicle].data,
+          borderColor: 'rgba(255, 99, 132, 1)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          fill: true,
+          tension: 0.1
+        }];
+        tpmsChart.update();
+      }
+    }
+
+    document.getElementById('sensorSelect').addEventListener('change', updateTempChart);
+    document.getElementById('tpmsSelect').addEventListener('change', updateTPMSChart);
+  </script>
+</body>
+</html>

@@ -18,6 +18,7 @@ First, clone the repository to your local machine:
 
 ```bash
 git clone https://github.com/timdigga/rtl433websocket
+cd rtl433websocket
 ```
 Install the required Python dependencies:
 

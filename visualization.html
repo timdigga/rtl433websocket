@@ -96,10 +96,6 @@
         }
         tpmsData[vehicle].labels.push(time);
         tpmsData[vehicle].data.push(data.pressure_PSI);
-        if (tpmsData[vehicle].labels.length > 30) {
-          tpmsData[vehicle].labels.shift();
-          tpmsData[vehicle].data.shift();
-        }
         updateTPMSChart();
       } else {
         const sensor = data.model;
@@ -113,10 +109,6 @@
         }
         sensorData[sensor].labels.push(time);
         sensorData[sensor].data.push(data.temperature_C);
-        if (sensorData[sensor].labels.length > 30) {
-          sensorData[sensor].labels.shift();
-          sensorData[sensor].data.shift();
-        }
         updateTempChart();
       }
     };

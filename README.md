@@ -29,7 +29,7 @@ pip install -r requirements.txt
 Start the WebSocket server to begin reading data from the sensors and broadcasting it to connected clients:
 
 ```bash
-python websocket_server.py
+python websocket.py
 ```
 The WebSocket server will start on ws://localhost:8765. You will see messages printed in the terminal for each received data signal.
 
